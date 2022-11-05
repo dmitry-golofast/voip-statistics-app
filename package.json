@@ -1,0 +1,33 @@
+{
+  "name": "appstatistics",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "nodemon index.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dmitry-golofast/AppStatistics.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/dmitry-golofast/AppStatistics/issues"
+  },
+  "homepage": "https://github.com/dmitry-golofast/AppStatistics#readme",
+  "dependencies": {
+    "express": "^4.18.2",
+    "mysql": "^2.18.1",
+    "mysql2": "^2.3.3",
+    "node-mysql": "^0.4.2",
+    "node-mysql2": "^1.0.0",
+    "node-telegram-bot-api": "^0.59.0",
+    "sequelize": "^6.23.2"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.20"
+  }
+}
