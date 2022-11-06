@@ -1,10 +1,12 @@
 const express = require('express');
+const axios = require('axios');
 const app = express();
 const db = require('./db');
 const baseRouter = require('./route');
-// const TelegramBot = require('node-telegram-bot-api');
-// const tokenApiTelegram = '5646820627:AAGW-QfoNjqNeyplAPh5Gqv6Uge0MozDrKQ';
-// const bot = new TelegramBot(tokenApiTelegram, {polling: true});
+const TelegramBot = require('node-telegram-bot-api');
+const tokenApiTelegram = require('./telegram-token');
+const bot = new TelegramBot(tokenApiTelegram, {polling: true});
+const tokenApiWeather = require('./weather-api-token')
 
 const PORT = process.env.PORT || 8082;
 app.listen(PORT, () => console.log(`The server running on the port ${PORT}`));
@@ -20,37 +22,115 @@ db.connect(function(err){
     }
 });
 
+function getStringDate() {
+    let
+        now = new Date();
+        year = now.getFullYear(),
+        month = now.getMonth(),
+        day = now.getDate()
 
-// закрытие подключения
-// connection.end(function(err) {
+    month = (month < 10) ? '0' + (month + 1) : month + 1;
+    day = (day < 10) ? '0' + day : day;
+    return year + '-' + month + '-' + day;
+}
+
+async function startFeatureBot() {
+    await bot.setMyCommands([
+        {command: '/start', description: 'Start bot'},
+    ])
+    bot.on('message', async msg => {
+        let text = msg.text;
+        let chatId = msg.chat.id;
+        let last_name = msg.chat.last_name;
+        let first_name = msg.chat.first_name;
+        let username = msg.chat.username;
+
+        const sendButtons = async () => {
+            if (first_name) {
+                await bot.sendMessage(chatId, `Здравствуйте ${first_name}. Нажмите на любую интересующую Вас кнопку.`, {
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{text: 'Погода в Милане', callback_data: 'WeatherItaly'}],
+                            [{text: 'Получить данные по звонкам за сегодня', callback_data: 'CallsDay'}]
+                        ]
+                    }
+                })
+            } else {
+                await bot.sendMessage(chatId, 'Inter you name in telegram')
+            }
+        }
+        if (text === '/start') {
+            await sendButtons();
+        }
+    })
+
+    const mainApp = async () => {
+        bot.on('callback_query', async msg => {
+            const weatherHtmlTemplate = (name, main, weather, wind, clouds) => (`
+The weather in <b>${name}</b>:
+<b>${weather.main}</b> - ${weather.description}
+Temperature: <b>${main.temp} °C</b>
+Pressure: <b>${main.pressure} hPa</b>
+Humidity: <b>${main.humidity} %</b>
+Wind: <b>${wind.speed} meter/sec</b>
+Clouds: <b>${clouds.all} %</b>
+`);
+            const data = msg.data;
+            const chatId = msg.message.chat.id;
+            if (data === 'WeatherItaly') {
+                const codeCity = 3173435;
+                const weatherUrl = `http://api.openweathermap.org/data/2.5/weather?id=${codeCity}&units=metric&appid=${tokenApiWeather}`;
+                const cityWeather = () => {
+                    axios.get(weatherUrl).then((resp) => {
+                        const {
+                            name,
+                            main,
+                            weather,
+                            wind,
+                            clouds
+                        } = resp.data;
+                        return bot.sendMessage(chatId, weatherHtmlTemplate(name, main, weather[0], wind, clouds), {
+                            parse_mode: 'HTML'
+                        })
+                    }).catch(function (error) {
+                        console.log(error);
+                        return bot.sendMessage(chatId, 'BOT can not get data from the server');
+                    });
+                }
+                cityWeather();
+            }
+            if (data === 'CallsDay') {
+                await bot.sendMessage(chatId, 'Выберите интересующий вас пункт меню', {
+                    reply_markup: {
+                        inline_keyboard: [
+                            [{text: 'Количесво исходищих звонков', callback_data: 'OutGoingCalls'}],
+                            [{text: 'Количество входящих звонков', callback_data: 'InCameCalls'}],
+                            [{text: 'Минуты на исходящие', callback_data: 'OutBillsecCalls'}],
+                            [{text: 'Минуты на входящие', callback_data: 'InBillsecCalls'}]
+                        ]
+                    }
+                })
+            }
+            if (data === 'OutGoingCalls') {
+                async function getCallsDay() {
+                    const today = getStringDate();
+                    await fetch(`http://localhost:8082/api/callsday/${today}/`)
+                        .then(response => response.json())
+                        .then((data) => {
+                            bot.sendMessage(chatId, `Сегодня зафиксированно ${data} исх. звонка`)
+                        });
+                }
+                await getCallsDay()
+            }
+        })
+    }
+    await mainApp();
+}
+startFeatureBot();
+
+// db.end(function(err) {
 //     if (err) {
 //         return console.log("Ошибка: " + err.message);
 //     }
 //     console.log("Подключение закрыто");
 // });
-
-//     await bot.setMyCommands([
-//         {command: '/start', description: 'Start bot'},
-//     ])
-//     bot.on('message', async msg => {
-//         let text = msg.text;
-//         let chatId = msg.chat.id;
-//         let last_name = msg.chat.last_name;
-//         let first_name = msg.chat.first_name;
-//         let username = msg.chat.username;
-//
-//         const sendButtons = async () => {
-//             await bot.sendMessage(chatId, 'Здравствуйте. Нажмите на любую интересующую Вас кнопку.', {
-//                 reply_markup: {
-//                     inline_keyboard: [
-//                         [{text: 'Погода в Италии', callback_data: 'WeatherItaly'}],
-//                         [{text: 'Получить статистику по звонкам', callback_data: 'VoIP'}]
-//                     ]
-//                 }
-//             })
-//         }
-//         if (text === '/start') {
-//             await sendButtons();
-//         }
-//     })
-// }

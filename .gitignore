@@ -1,5 +1,7 @@
-node_modules
+weather-api-token.js
+telegram-token.js
 db.js
+node_modules
 .idea
 Thumbs.db*
 .DS_Store*

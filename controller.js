@@ -1,12 +1,13 @@
 const db = require('./db');
 
 class baseController {
-    async selectCallsDay(req, res) {
-        const sql = `SELECT calldate, src, dst, disposition, billsec FROM cdr WHERE calldate LIKE '%2022-10-25%'`;
-        await db.query(sql , function (err, results) {
+    async selectOutCallsDay(req, res) {
+        const date = req.params.date;
+        const sql = `SELECT COUNT(*) FROM cdr where src LIKE '1%' and calldate LIKE '%${date}%'`
+        await db.query(sql , function (err, response) {
             if (err) console.log(err);
-            console.log(results)
-            res.json(results)
+            const count = 'COUNT(*)';
+            res.json(response[0][count])
         })
 
     }
