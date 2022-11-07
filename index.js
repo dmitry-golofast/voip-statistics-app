@@ -41,9 +41,7 @@ async function startFeatureBot() {
     bot.on('message', async msg => {
         let text = msg.text;
         let chatId = msg.chat.id;
-        let last_name = msg.chat.last_name;
         let first_name = msg.chat.first_name;
-        let username = msg.chat.username;
 
         const sendButtons = async () => {
             if (first_name) {
@@ -104,9 +102,9 @@ Clouds: <b>${clouds.all} %</b>
                     reply_markup: {
                         inline_keyboard: [
                             [{text: 'Количесво исходищих звонков', callback_data: 'OutGoingCalls'}],
-                            [{text: 'Количество входящих звонков', callback_data: 'InCameCalls'}],
-                            [{text: 'Минуты на исходящие', callback_data: 'OutBillsecCalls'}],
-                            [{text: 'Минуты на входящие', callback_data: 'InBillsecCalls'}]
+                            [{text: 'Количество входящих звонков', callback_data: 'InComeCalls'}],
+                            [{text: 'Минуты на исходящие', callback_data: 'OutMinCalls'}],
+                            [{text: 'Минуты на входящие', callback_data: 'InMinCalls'}]
                         ]
                     }
                 })
@@ -117,20 +115,47 @@ Clouds: <b>${clouds.all} %</b>
                     await fetch(`http://localhost:8082/api/callsday/${today}/`)
                         .then(response => response.json())
                         .then((data) => {
-                            bot.sendMessage(chatId, `Сегодня зафиксированно ${data} исх. звонка`)
+                            bot.sendMessage(chatId, `Сегодня зафиксированно ${data} исх. звонков`)
                         });
                 }
                 await getCallsDay()
             }
+            if (data === 'InComeCalls') {
+                async function getInCallsDay() {
+                    const today = getStringDate();
+                    await fetch(`http://localhost:8082/api/incallsday/${today}/`)
+                        .then(response => response.json())
+                        .then((data) => {
+                            bot.sendMessage(chatId, `Сегодня зафиксированно ${data} вх. звонка`)
+                        });
+                }
+                await getInCallsDay()
+            }
+            if (data === 'OutMinCalls') {
+                async function getOutMinDay() {
+                    const today = getStringDate();
+                    await fetch(`http://localhost:8082/api/outminday/${today}/`)
+                        .then(response => response.json())
+                        .then((data) => {
+                            bot.sendMessage(chatId, `Сегодня сотрудники ${data} минут звонили из салона`)
+                        });
+                }
+                await getOutMinDay()
+            }
+            if (data === 'InMinCalls') {
+                async function getInMinDay() {
+                    const today = getStringDate();
+                    await fetch(`http://localhost:8082/api/inminday/${today}/`)
+                        .then(response => response.json())
+                        .then((data) => {
+                            bot.sendMessage(chatId, `Сегодня клиенты были на вх.линии ${data} минут`)
+                        });
+                }
+                await getInMinDay()
+            }
+
         })
     }
     await mainApp();
 }
 startFeatureBot();
-
-// db.end(function(err) {
-//     if (err) {
-//         return console.log("Ошибка: " + err.message);
-//     }
-//     console.log("Подключение закрыто");
-// });
