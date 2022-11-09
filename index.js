@@ -6,21 +6,13 @@ const baseRouter = require('./route');
 const TelegramBot = require('node-telegram-bot-api');
 const tokenApiTelegram = require('./telegram-token');
 const bot = new TelegramBot(tokenApiTelegram, {polling: true});
-const tokenApiWeather = require('./weather-api-token')
+const tokenApiWeather = require('./weather-api-token');
 
 const PORT = process.env.PORT || 8082;
 app.listen(PORT, () => console.log(`The server running on the port ${PORT}`));
 
 app.use(express.json());
 app.use('/api', baseRouter);
-
-db.connect(function(err){
-    if (err) {
-        return console.error('Error: ' + err.message);
-    } else {
-        console.log('The connection to the MySQL server has been successfully established');
-    }
-});
 
 function getStringDate() {
     let
@@ -35,9 +27,19 @@ function getStringDate() {
 }
 
 async function startFeatureBot() {
+
+    db.connect(function(err){
+        if (err) {
+            return console.error('Error: ' + err.message);
+        } else {
+            console.log('The connection to the MySQL server has been successfully established');
+        }
+    });
+
     await bot.setMyCommands([
         {command: '/start', description: 'Start bot'},
     ])
+
     bot.on('message', async msg => {
         let text = msg.text;
         let chatId = msg.chat.id;
@@ -57,6 +59,7 @@ async function startFeatureBot() {
                 await bot.sendMessage(chatId, 'Inter you name in telegram')
             }
         }
+
         if (text === '/start') {
             await sendButtons();
         }
@@ -97,6 +100,7 @@ Clouds: <b>${clouds.all} %</b>
                 }
                 cityWeather();
             }
+
             if (data === 'CallsDay') {
                 await bot.sendMessage(chatId, 'Выберите интересующий вас пункт меню', {
                     reply_markup: {
@@ -104,11 +108,13 @@ Clouds: <b>${clouds.all} %</b>
                             [{text: 'Количесво исходищих звонков', callback_data: 'OutGoingCalls'}],
                             [{text: 'Количество входящих звонков', callback_data: 'InComeCalls'}],
                             [{text: 'Минуты на исходящие', callback_data: 'OutMinCalls'}],
-                            [{text: 'Минуты на входящие', callback_data: 'InMinCalls'}]
+                            [{text: 'Минуты на входящие', callback_data: 'InMinCalls'}],
+                            [{text: 'График по сотрудникам за месяц', callback_data: 'OutCountMonth'}]
                         ]
                     }
                 })
             }
+
             if (data === 'OutGoingCalls') {
                 async function getCallsDay() {
                     const today = getStringDate();
@@ -120,6 +126,7 @@ Clouds: <b>${clouds.all} %</b>
                 }
                 await getCallsDay()
             }
+
             if (data === 'InComeCalls') {
                 async function getInCallsDay() {
                     const today = getStringDate();
@@ -131,6 +138,7 @@ Clouds: <b>${clouds.all} %</b>
                 }
                 await getInCallsDay()
             }
+
             if (data === 'OutMinCalls') {
                 async function getOutMinDay() {
                     const today = getStringDate();
@@ -142,6 +150,7 @@ Clouds: <b>${clouds.all} %</b>
                 }
                 await getOutMinDay()
             }
+
             if (data === 'InMinCalls') {
                 async function getInMinDay() {
                     const today = getStringDate();
@@ -154,6 +163,19 @@ Clouds: <b>${clouds.all} %</b>
                 await getInMinDay()
             }
 
+            if (data === 'OutCountMonth') {
+                async function getOutCountMonthAll() {
+                    const url = ('./files/diagramma.png');
+                    // const month = '2022-10';
+                    // await fetch(`http://localhost:8082/api/instatmonth/${month}/`)
+                    //     .then(response => response.json())
+                    //     .then((data) => {
+                            await bot.sendMessage(chatId, `Количество исх.вызовов по сотрудникам за предыдущий месяц:`)
+                            await bot.sendPhoto(chatId, url);
+                        // });
+                }
+                await getOutCountMonthAll()
+            }
         })
     }
     await mainApp();
